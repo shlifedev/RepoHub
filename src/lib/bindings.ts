@@ -5,8 +5,8 @@
 
 
 export const commands = {
-async helloWorld(myName: string) : Promise<void> {
-    await TAURI_INVOKE("hello_world", { myName });
+async refreshCommand() : Promise<void> {
+    await TAURI_INVOKE("refresh_command");
 }
 }
 
@@ -14,9 +14,9 @@ async helloWorld(myName: string) : Promise<void> {
 
 
 export const events = __makeEvents__<{
-myEvent: MyEvent
+appInitializeEvent: AppInitializeEvent
 }>({
-myEvent: "my-event"
+appInitializeEvent: "app-initialize-event"
 })
 
 /** user-defined constants **/
@@ -25,7 +25,8 @@ myEvent: "my-event"
 
 /** user-defined types **/
 
-export type MyEvent = string
+export type AppInitializeEvent = { repository_datas: RepositoryInfo[]; auth_token: string; root_path: string; app_version: string }
+export type RepositoryInfo = { id: number; name: string; path: string; branch: string; gameVersion: string; gameVersions: string[]; server: string; serverOptions: string[]; hasWarning: boolean }
 
 /** tauri-specta globals **/
 

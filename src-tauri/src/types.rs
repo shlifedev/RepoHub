@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri_specta::Event;
 
-#[derive(Serialize, Deserialize, Clone)]
+
+#[derive(Serialize, Deserialize, Type, Clone)]
 pub struct RepositoryInfo {
     pub id: u32,
     pub name: String,
@@ -20,5 +21,13 @@ pub struct RepositoryInfo {
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type, Event)]
-pub struct MyEvent(String);
+/*
+    앱 초기화 이벤트.
+*/
+#[derive(Clone, Type, Event)]
+pub struct AppInitializeEvent {
+    pub repository_datas: Vec<RepositoryInfo>,
+    pub auth_token: String,
+    pub root_path: String,
+    pub app_version: String
+}
