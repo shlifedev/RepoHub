@@ -7,6 +7,7 @@ use modules::types::AppInitializeEvent;
 pub mod modules {
     pub mod git;
     pub mod types;
+    pub mod appDb;
 }
 
 #[tauri::command]
