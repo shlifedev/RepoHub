@@ -1,13 +1,13 @@
-mod types;
-pub mod git;
-use std::path::PathBuf;
 use specta_typescript::Typescript;
-use tauri::{AppHandle, Builder, Manager};
+use tauri::Manager;
 use tauri_specta::{collect_commands, collect_events};
-use crate::types::AppInitializeEvent;
+use modules::types::AppInitializeEvent;
 
 
-
+pub mod modules {
+    pub mod git;
+    pub mod types;
+}
 
 #[tauri::command]
 #[specta::specta]
