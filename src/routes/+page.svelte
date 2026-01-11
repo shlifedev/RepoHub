@@ -1,19 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
-  import { events, commands } from "$lib/bindings"
-  interface RepositoryInfo {
-      id: number;
-    name: string;
-    path: string;
-    branch: string;
-    gameVersion: string;
-    gameVersions: string[];
-    server: string;
-    serverOptions: string[];
-    hasWarning: boolean;
-  }
-
+  import {events, commands, type RepositoryInfo} from "$lib/bindings"
   // 샘플 레포지토리 데이터
   let repositories = $state<RepositoryInfo[]>([
     {
@@ -78,6 +66,7 @@
   let showModal = $state(false);
   let newRepoName = $state("");
   let newRepoUrl = $state("");
+  let counter = $state(0);
 
   function openModal() {
     showModal = true;
@@ -147,9 +136,9 @@
     </div>
   </div>
 
-  <button onclick={() => commands.helloWorld("World!")} >
-    Do Something
-  </button>
+  <button onclick={async ()=>{
+     counter = await commands.increaseCounter();
+  }}> Click Me! {counter} </button>
 
   <!-- 테이블 헤더 -->
   <div class="table-header">

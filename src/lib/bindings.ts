@@ -5,8 +5,8 @@
 
 
 export const commands = {
-async refreshCommand() : Promise<void> {
-    await TAURI_INVOKE("refresh_command");
+async increaseCounter() : Promise<number> {
+    return await TAURI_INVOKE("increase_counter");
 }
 }
 
