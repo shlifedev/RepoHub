@@ -26,7 +26,7 @@ appInitializeEvent: "app-initialize-event"
 /** user-defined types **/
 
 export type AppInitializeEvent = { repository_datas: RepositoryInfo[]; auth_token: string; root_path: string; app_version: string }
-export type RepositoryInfo = { id: number; name: string; path: string; branch: string; gameVersion: string; gameVersions: string[]; server: string; serverOptions: string[]; hasWarning: boolean }
+export type RepositoryInfo = { id: number; name: string; remote_url: string; branch: string; path: string; gameVersion: string; gameVersions: string[]; server: string; serverOptions: string[]; hasWarning: boolean }
 
 /** tauri-specta globals **/
 

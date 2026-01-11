@@ -1,20 +1,17 @@
+mod command;
+
 use std::sync::Mutex;
 use specta_typescript::Typescript;
 use tauri::State;
 use tauri_specta::{collect_commands, collect_events};
 use modules::types::AppInitializeEvent;
+use crate::modules::git::Git;
 use crate::modules::types::RepositoryInfo;
 
 pub mod modules {
     pub mod git;
     pub mod types;
-    pub mod appDb;
 }
-pub mod commands{
-
-}
-
-
 struct AppState {
     count : u32,
     path_root : String,
@@ -31,6 +28,16 @@ fn increase_counter(state: State<'_, Mutex<AppState>>) -> u32{
     state.count
 }
 
+
+// pub async fn create_repository_info_from_path(full_path : &str){
+//     let is_git_repo = Git::is_git_directory(full_path).await;
+//     if (is_git_repo)
+//     {
+//         let remote_url = Git::remote_url(&full_path);
+//         let current_branch =Git::current_branch(&full_path);
+//         let remote_branches = Git::remote_branch_list(&full_path);
+//     }
+// }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

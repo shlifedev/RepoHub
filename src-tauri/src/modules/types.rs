@@ -7,8 +7,9 @@ use tauri_specta::Event;
 pub struct RepositoryInfo {
     pub id: u32,
     pub name: String,
-    pub path: String,
+    pub remote_url: String,
     pub branch: String,
+    pub path: String,
     #[serde(rename = "gameVersion")]
     pub game_version: String,
     #[serde(rename = "gameVersions")]

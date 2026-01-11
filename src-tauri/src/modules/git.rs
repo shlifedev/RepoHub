@@ -46,6 +46,17 @@
             }
         }
 
+        
+        pub async fn current_branch(work_dir: &str) -> Option<String> {
+            let (has_error, output) = Self::run_command(work_dir, "rev-parse --abbrev-ref HEAD").await;
+
+            if !has_error {
+                let branch = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                Some(branch)
+            } else {
+                None
+            }
+        }
         pub async fn remote_url(work_dir: &str) -> Option<String> {
             let (has_error, output) = Self::run_command(work_dir, "config --get remote.origin.url").await;
 
