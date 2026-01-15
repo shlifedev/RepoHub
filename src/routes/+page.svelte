@@ -1,56 +1,184 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
-  import { onMount } from "svelte";
-  import {events, commands, type RepositoryInfo} from "$lib/bindings"
-  import "./page.css";
+  import { onMount, onDestroy } from "svelte"
+  import { events, commands, type RepositoryInfo } from "$lib/bindings"
+  import "./page.css"
 
-  // 샘플 레포지토리 데이터
-  let repositories = $state<RepositoryInfo[]>([
-    {
-      id: 1,
-      name: "MyaoLand",
-      path: "C:\\Users\\shlif\\MyaoLand",
-      branch: "main",
-      gameVersion: "1.0.2",
-      gameVersions: ["1.0.0", "1.0.1", "1.0.2", "1.1.0", "1.2.0"],
-      server: "LIVE",
-      serverOptions: ["DEV", "QA", "LIVE"],
-      hasWarning: false,
-    },
-    {
-      id: 2,
-      name: "LocaleKit",
-      path: "...sers\\shlif\\@src\\percent-localization-v2\\SampleProjects\\LocaleKit",
-      branch: "develop",
-      gameVersion: "1.0.1",
-      gameVersions: ["1.0.0", "1.0.1", "1.0.2"],
-      server: "QA",
-      serverOptions: ["DEV", "QA"],
-      hasWarning: false,
-    },
-  ]);
+  let repositories = $state<RepositoryInfo[]>([])
+  let searchQuery = $state("")
+  let showModal = $state(false)
+  let newRepoName = $state("")
+  let newRepoUrl = $state("")
+  let isCloning = $state(false)
+  let cloneProgress = $state(0)
+  let cloneMessage = $state("")
+  let errorMessage = $state("")
+  let nameError = $state("")
+  let versionChangeModal = $state(false)
+  let versionChangeTarget = $state<{ repoId: number; newVersion: string; newTag: string } | null>(null)
+  let isRefreshing = $state<Set<number>>(new Set())
+  let openMenuId = $state<number | null>(null)
+  let deleteConfirmModal = $state(false)
+  let deleteTarget = $state<number | null>(null)
 
-
-  let searchQuery = $state("");
-  let showModal = $state(false);
-  let newRepoName = $state("");
-  let newRepoUrl = $state("");
-  let counter = $state(0);
+  let unlistenProgress: (() => void) | null = null
+  let unlistenComplete: (() => void) | null = null
 
   function openModal() {
-    showModal = true;
-    newRepoName = "";
-    newRepoUrl = "";
+    showModal = true
+    newRepoName = ""
+    newRepoUrl = ""
+    errorMessage = ""
+    nameError = ""
   }
 
   function closeModal() {
-    showModal = false;
+    showModal = false
+    isCloning = false
+    cloneProgress = 0
+    cloneMessage = ""
+    errorMessage = ""
   }
 
+  function openVersionChangeModal(repoId: number, newVersion: string, newTag: string) {
+    versionChangeTarget = { repoId, newVersion, newTag }
+    versionChangeModal = true
+  }
+
+  function closeVersionChangeModal() {
+    versionChangeModal = false
+    versionChangeTarget = null
+  }
+
+  async function handleVersionChange() {
+    if (!versionChangeTarget) return
+
+    const { repoId, newTag } = versionChangeTarget
+    const result = await commands.changeVersion(repoId, newTag)
+
+    if (result.status === "ok") {
+      repositories = repositories.map(repo =>
+        repo.id === repoId ? result.data : repo
+      )
+    }
+
+    closeVersionChangeModal()
+  }
+
+  async function handleRefresh(repoId: number) {
+    isRefreshing = new Set([...isRefreshing, repoId])
+
+    const result = await commands.refreshRepository(repoId)
+
+    if (result.status === "ok") {
+      repositories = repositories.map(repo =>
+        repo.id === repoId ? result.data : repo
+      )
+    }
+
+    isRefreshing = new Set([...isRefreshing].filter(id => id !== repoId))
+  }
+
+  function toggleMenu(repoId: number) {
+    openMenuId = openMenuId === repoId ? null : repoId
+  }
+
+  function closeMenu() {
+    openMenuId = null
+  }
+
+  function openDeleteConfirm(repoId: number) {
+    deleteTarget = repoId
+    deleteConfirmModal = true
+    closeMenu()
+  }
+
+  function closeDeleteConfirm() {
+    deleteConfirmModal = false
+    deleteTarget = null
+  }
+
+  async function handleDelete() {
+    if (deleteTarget === null) return
+
+    const result = await commands.deleteRepository(deleteTarget)
+
+    if (result.status === "ok") {
+      repositories = repositories.filter(repo => repo.id !== deleteTarget)
+    }
+
+    closeDeleteConfirm()
+  }
+
+  function validateName(name: string): boolean {
+    if (!name) {
+      nameError = ""
+      return false
+    }
+    const valid = /^[a-zA-Z0-9_-]+$/.test(name)
+    if (!valid) {
+      nameError = "Only letters, numbers, underscores, and dashes allowed"
+      return false
+    }
+    nameError = ""
+    return true
+  }
+
+  async function handleAddRepository() {
+    if (!validateName(newRepoName)) {
+      return
+    }
+    if (!newRepoUrl.trim()) {
+      errorMessage = "Repository URL is required"
+      return
+    }
+
+    isCloning = true
+    cloneProgress = 0
+    cloneMessage = "Starting..."
+    errorMessage = ""
+
+    try {
+      const result = await commands.cloneRepository(newRepoUrl, newRepoName)
+
+      if (result.status === "ok") {
+        repositories = [...repositories, result.data]
+        showModal = false
+        newRepoName = ""
+        newRepoUrl = ""
+      } else {
+        errorMessage = result.error
+      }
+    } catch (e) {
+      errorMessage = String(e)
+    } finally {
+      isCloning = false
+      cloneProgress = 0
+      cloneMessage = ""
+    }
+  }
 
   onMount(async () => {
-    console.log("Mounted!");
-  });
+    await commands.loadState()
+    repositories = await commands.getRepositories()
+
+    unlistenProgress = await events.cloneProgressEvent.listen((e) => {
+      console.log("[Frontend] Progress event:", e.payload)
+      cloneProgress = e.payload.progress
+      cloneMessage = e.payload.message
+    })
+
+    unlistenComplete = await events.cloneCompleteEvent.listen((e) => {
+      console.log("[Frontend] Complete event:", e.payload)
+      if (!e.payload.success && e.payload.error_message) {
+        errorMessage = e.payload.error_message
+      }
+    })
+  })
+
+  onDestroy(() => {
+    unlistenProgress?.()
+    unlistenComplete?.()
+  })
 </script>
 
 
@@ -70,15 +198,11 @@
     </div>
   </div>
 
-  <button onclick={async ()=>{
-     counter = await commands.increaseCounter();
-  }}> Click Me! {counter} </button>
-
   <!-- 테이블 헤더 -->
   <div class="table-header">
     <div class="header-cell name-cell">Name</div>
     <div class="header-cell version-cell">Game Version</div>
-    <div class="header-cell server-cell">Server</div>
+    <div class="header-cell sync-cell">Last Sync</div>
     <div class="header-cell settings-cell">⚙️</div>
   </div>
 </header>
@@ -99,21 +223,45 @@
         </div>
       </div>
       <div class="cell version-cell">
-        <select bind:value={repo.gameVersion} class="version-select">
+        <select
+          value={repo.gameVersion}
+          onchange={(e) => {
+            const target = e.target as HTMLSelectElement
+            const index = repo.gameVersions.indexOf(target.value)
+            if (index !== -1 && repo.serverOptions[index]) {
+              openVersionChangeModal(repo.id, target.value, repo.serverOptions[index])
+            }
+          }}
+          class="version-select"
+        >
           {#each repo.gameVersions as version}
             <option value={version}>{version}</option>
           {/each}
         </select>
       </div>
-      <div class="cell server-cell">
-        <select bind:value={repo.server} class="server-select">
-          {#each repo.serverOptions as server}
-            <option value={server}>{server}</option>
-          {/each}
-        </select>
+      <div class="cell sync-cell">
+        <div class="sync-info">
+          <button
+            class="refresh-btn"
+            onclick={() => handleRefresh(repo.id)}
+            disabled={isRefreshing.has(repo.id)}
+          >
+            {isRefreshing.has(repo.id) ? "↻" : "Refresh"}
+          </button>
+          {#if repo.lastSyncTime}
+            <span class="sync-time">{repo.lastSyncTime}</span>
+          {/if}
+        </div>
       </div>
       <div class="cell settings-cell">
-        <button class="icon-btn">⋯</button>
+        <button class="icon-btn" onclick={() => toggleMenu(repo.id)}>⋯</button>
+        {#if openMenuId === repo.id}
+          <div class="hamburger-menu">
+            <button class="menu-item" onclick={() => openDeleteConfirm(repo.id)}>
+              Delete Repository
+            </button>
+          </div>
+        {/if}
       </div>
     </div>
   {/each}
@@ -121,37 +269,89 @@
 
 <!-- 모달 -->
 {#if showModal}
-  <div class="modal-overlay" onclick={closeModal}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+  <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeModal} onkeydown={(e) => e.key === 'Escape' && closeModal()}>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
       <h2>Add Repository</h2>
-      <form onsubmit={(e) => { e.preventDefault(); closeModal();}}>
+      <form onsubmit={(e) => { e.preventDefault(); handleAddRepository(); }}>
         <div class="form-group">
           <label for="repo-name">Repository Name</label>
           <input
             id="repo-name"
             type="text"
-            placeholder="e.g., MyProject"
+            placeholder="e.g., MyProject (letters, numbers, _, - only)"
             bind:value={newRepoName}
+            oninput={() => validateName(newRepoName)}
+            disabled={isCloning}
             required
           />
+          {#if nameError}
+            <span class="field-error">{nameError}</span>
+          {/if}
         </div>
         <div class="form-group">
           <label for="repo-url">Repository URL</label>
           <input
             id="repo-url"
             type="text"
-            placeholder="e.g., C:\path\to\repo"
+            placeholder="e.g., https://github.com/user/repo.git"
             bind:value={newRepoUrl}
+            disabled={isCloning}
             required
           />
         </div>
+
+        {#if isCloning}
+          <div class="clone-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: {cloneProgress}%"></div>
+            </div>
+            <span class="progress-text">{cloneMessage} ({cloneProgress}%)</span>
+          </div>
+        {/if}
+
+        {#if errorMessage}
+          <div class="error-message">{errorMessage}</div>
+        {/if}
+
         <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick={closeModal}>
             Cancel
           </button>
-          <button type="submit" class="btn-primary">Add</button>
+          <button type="submit" class="btn-primary" disabled={isCloning || !!nameError}>
+            {isCloning ? "Cloning..." : "Add"}
+          </button>
         </div>
       </form>
+    </div>
+  </div>
+{/if}
+
+<!-- 삭제 확인 모달 -->
+{#if deleteConfirmModal}
+  <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeDeleteConfirm} onkeydown={(e) => e.key === 'Escape' && closeDeleteConfirm()}>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+      <h2>Delete Repository</h2>
+      <p class="warning-message">로컬 폴더를 포함하여 리포지토리가 완전히 삭제됩니다. 계속하시겠습니까?</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick={closeDeleteConfirm}>Cancel</button>
+        <button class="btn-primary" onclick={handleDelete}>Delete</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- 버전 변경 확인 모달 -->
+{#if versionChangeModal}
+  <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeVersionChangeModal} onkeydown={(e) => e.key === 'Escape' && closeVersionChangeModal()}>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+      <h2>Change Version</h2>
+      <p class="warning-message">
+        모든 변경사항이 사라집니다. 버전을 <strong>{versionChangeTarget?.newVersion}</strong>(으)로 변경하시겠습니까?
+      </p>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick={closeVersionChangeModal}>Cancel</button>
+        <button class="btn-primary" onclick={handleVersionChange}>Change Version</button>
+      </div>
     </div>
   </div>
 {/if}

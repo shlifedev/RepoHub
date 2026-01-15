@@ -2,67 +2,75 @@ mod command;
 
 use std::sync::Mutex;
 use specta_typescript::Typescript;
-use tauri::State;
+use tauri::{Manager, State};
 use tauri_specta::{collect_commands, collect_events};
-use modules::types::AppInitializeEvent;
-use crate::modules::git::Git;
+use modules::types::{AppInitializeEvent, CloneProgressEvent, CloneCompleteEvent};
 use crate::modules::types::RepositoryInfo;
+use crate::command::{get_root_path, set_root_path, add_project, clone_repository, validate_repo_name, get_repositories, get_filtered_tags, refresh_repository, change_version, delete_repository, save_state, load_state};
 
 pub mod modules {
     pub mod git;
     pub mod types;
 }
-struct AppState {
-    count : u32,
-    path_root : String,
-    registered_repo_urls : Vec<String>,
-    local_repositories : Vec<RepositoryInfo>
+
+pub struct AppState {
+    count: u32,
+    pub path_root: String,
+    pub local_repositories: Vec<RepositoryInfo>
 }
 
 #[tauri::command]
 #[specta::specta]
-fn increase_counter(state: State<'_, Mutex<AppState>>) -> u32{
-    println!("increase_counter");
+fn increase_counter(state: State<'_, Mutex<AppState>>) -> u32 {
     let mut state = state.lock().unwrap();
     state.count += 1;
     state.count
 }
 
-
-// pub async fn create_repository_info_from_path(full_path : &str){
-//     let is_git_repo = Git::is_git_directory(full_path).await;
-//     if (is_git_repo)
-//     {
-//         let remote_url = Git::remote_url(&full_path);
-//         let current_branch =Git::current_branch(&full_path);
-//         let remote_branches = Git::remote_branch_list(&full_path);
-//     }
-// }
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri_specta::Builder::<tauri::Wry>::new()
-        // 사용 할 커맨드 등록
-        .commands(collect_commands![increase_counter]).
-        // 사용할 이벤트 등록
-        events(collect_events![AppInitializeEvent]);
+    let builder = tauri_specta::Builder::<tauri::Wry>::new()
+        .commands(collect_commands![
+            increase_counter,
+            get_root_path,
+            set_root_path,
+            add_project,
+            clone_repository,
+            validate_repo_name,
+            get_repositories,
+            get_filtered_tags,
+            refresh_repository,
+            change_version,
+            delete_repository,
+            save_state,
+            load_state
+        ])
+        .events(collect_events![AppInitializeEvent, CloneProgressEvent, CloneCompleteEvent]);
 
-
-    // Typescript Binding 내보내기 [이벤트, 커멘드]
     builder
         .export(Typescript::default(), "../src/lib/bindings.ts")
         .expect("Failed to export typescript bindings");
 
+    let invoke_handler = builder.invoke_handler();
 
-    // 앱 빌드.
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init()) // ?
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_store::Builder::default().build())
         .manage(Mutex::new(AppState {
             count: 0,
             path_root: "".to_string(),
-            registered_repo_urls: vec![],
-            local_repositories: vec![] })) // 상태 관리할 객체.
-        .invoke_handler(builder.invoke_handler()) // 핸들러 등록
-        .run(tauri::generate_context!()) // 실행
+            local_repositories: vec![]
+        }))
+        .setup(move |app| {
+            builder.mount_events(app);
+            
+            let handle = app.handle().clone();
+            let state = app.state::<Mutex<AppState>>();
+            load_state(handle, state).ok();
+            Ok(())
+        })
+        .invoke_handler(invoke_handler)
+        .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

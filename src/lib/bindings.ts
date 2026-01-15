@@ -7,6 +7,82 @@
 export const commands = {
 async increaseCounter() : Promise<number> {
     return await TAURI_INVOKE("increase_counter");
+},
+async getRootPath() : Promise<string> {
+    return await TAURI_INVOKE("get_root_path");
+},
+async setRootPath(path: string) : Promise<string> {
+    return await TAURI_INVOKE("set_root_path", { path });
+},
+async addProject(remoteUrl: string, projectName: string) : Promise<RepositoryInfo[]> {
+    return await TAURI_INVOKE("add_project", { remoteUrl, projectName });
+},
+async cloneRepository(remoteUrl: string, projectName: string) : Promise<Result<RepositoryInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clone_repository", { remoteUrl, projectName }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async validateRepoName(name: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("validate_repo_name", { name }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getRepositories() : Promise<RepositoryInfo[]> {
+    return await TAURI_INVOKE("get_repositories");
+},
+async getFilteredTags(repoPath: string) : Promise<Result<TagInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_filtered_tags", { repoPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async refreshRepository(repoId: number) : Promise<Result<RepositoryInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("refresh_repository", { repoId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeVersion(repoId: number, tag: string) : Promise<Result<RepositoryInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_version", { repoId, tag }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteRepository(repoId: number) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_repository", { repoId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async saveState() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_state") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async loadState() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("load_state") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -14,9 +90,13 @@ async increaseCounter() : Promise<number> {
 
 
 export const events = __makeEvents__<{
-appInitializeEvent: AppInitializeEvent
+appInitializeEvent: AppInitializeEvent,
+cloneCompleteEvent: CloneCompleteEvent,
+cloneProgressEvent: CloneProgressEvent
 }>({
-appInitializeEvent: "app-initialize-event"
+appInitializeEvent: "app-initialize-event",
+cloneCompleteEvent: "clone-complete-event",
+cloneProgressEvent: "clone-progress-event"
 })
 
 /** user-defined constants **/
@@ -26,7 +106,10 @@ appInitializeEvent: "app-initialize-event"
 /** user-defined types **/
 
 export type AppInitializeEvent = { repository_datas: RepositoryInfo[]; auth_token: string; root_path: string; app_version: string }
-export type RepositoryInfo = { id: number; name: string; remote_url: string; branch: string; path: string; gameVersion: string; gameVersions: string[]; server: string; serverOptions: string[]; hasWarning: boolean }
+export type CloneCompleteEvent = { repo_name: string; success: boolean; error_message: string | null }
+export type CloneProgressEvent = { repo_name: string; progress: number; message: string }
+export type RepositoryInfo = { id: number; name: string; remote_url: string; branch: string; path: string; gameVersion: string; gameVersions: string[]; server: string; serverOptions: string[]; hasWarning: boolean; lastSyncTime: string | null }
+export type TagInfo = { originalTag: string; displayName: string }
 
 /** tauri-specta globals **/
 

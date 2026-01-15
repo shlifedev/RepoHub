@@ -1,8 +1,29 @@
 <script lang="ts">
-  let theme = $state("dark");
-  let autoUpdate = $state(true);
-  let notifications = $state(true);
-  let defaultEditor = $state("vscode");
+  import { onMount } from "svelte"
+  import { open } from "@tauri-apps/plugin-dialog"
+  import { commands } from "$lib/bindings"
+
+  let rootPath = $state("")
+
+  onMount(async () => {
+    const path = await commands.getRootPath()
+    if (path) {
+      rootPath = path
+    }
+  })
+
+  async function selectRootPath() {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: "Select Repository Root Directory"
+    })
+
+    if (selected && typeof selected === "string") {
+      const result = await commands.setRootPath(selected)
+      rootPath = result
+    }
+  }
 </script>
 
 <div class="settings-container">
@@ -12,74 +33,22 @@
 
   <div class="settings-content">
     <section class="settings-section">
-      <h2>Appearance</h2>
+      <h2>Repository</h2>
       <div class="setting-item">
         <div class="setting-info">
-          <label for="theme">Theme</label>
-          <p class="setting-description">Choose your preferred color scheme</p>
-        </div>
-        <select id="theme" bind:value={theme}>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-          <option value="auto">Auto</option>
-        </select>
-      </div>
-    </section>
-
-    <section class="settings-section">
-      <h2>General</h2>
-      <div class="setting-item">
-        <div class="setting-info">
-          <label for="auto-update">Auto Update</label>
+          <label for="root-path">Root Path</label>
           <p class="setting-description">
-            Automatically download and install updates
+            Directory where repositories will be cloned
           </p>
         </div>
-        <label class="toggle">
-          <input type="checkbox" bind:checked={autoUpdate} />
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <div class="setting-item">
-        <div class="setting-info">
-          <label for="notifications">Notifications</label>
-          <p class="setting-description">
-            Show desktop notifications for important events
-          </p>
+        <div class="path-selector">
+          <span class="current-path" title={rootPath}>
+            {rootPath || "Not set"}
+          </span>
+          <button class="btn-browse" onclick={selectRootPath}>
+            Browse
+          </button>
         </div>
-        <label class="toggle">
-          <input type="checkbox" bind:checked={notifications} />
-          <span class="slider"></span>
-        </label>
-      </div>
-    </section>
-
-    <section class="settings-section">
-      <h2>Editor</h2>
-      <div class="setting-item">
-        <div class="setting-info">
-          <label for="editor">Default Editor</label>
-          <p class="setting-description">
-            Choose your preferred code editor for opening projects
-          </p>
-        </div>
-        <select id="editor" bind:value={defaultEditor}>
-          <option value="vscode">Visual Studio Code</option>
-          <option value="cursor">Cursor</option>
-          <option value="sublime">Sublime Text</option>
-          <option value="vim">Vim</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-    </section>
-
-    <section class="settings-section">
-      <h2>About</h2>
-      <div class="about-info">
-        <p><strong>Version:</strong> 1.0.0</p>
-        <p><strong>Build:</strong> 2026.01.09</p>
-        <p><strong>License:</strong> MIT</p>
       </div>
     </section>
   </div>
@@ -227,5 +196,36 @@
 
   .about-info strong {
     color: #fff;
+  }
+
+  .path-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .current-path {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #808080;
+    font-size: 14px;
+  }
+
+  .btn-browse {
+    padding: 8px 16px;
+    background-color: #2d2d2d;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-browse:hover {
+    background-color: #3d3d3d;
+    border-color: #505050;
   }
 </style>
