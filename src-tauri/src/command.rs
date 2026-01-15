@@ -239,6 +239,7 @@ pub async fn get_filtered_tags(repo_path: String) -> Result<Vec<TagInfo>, String
 #[tauri::command]
 #[specta::specta]
 pub async fn refresh_repository(
+    app: AppHandle,
     state: State<'_, Mutex<AppState>>,
     repo_id: u32,
 ) -> Result<RepositoryInfo, String> {
@@ -265,13 +266,22 @@ pub async fn refresh_repository(
     let current_version = display_names.first().cloned().unwrap_or_default();
     let sync_time = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
-    let mut state = state.lock().unwrap();
-    if let Some(repo) = state.local_repositories.iter_mut().find(|r| r.id == repo_id) {
-        repo.game_versions = display_names;
-        repo.server_options = original_tags;
-        repo.game_version = current_version;
-        repo.last_sync_time = Some(sync_time);
-        return Ok(repo.clone());
+    let result = {
+        let mut state_guard = state.lock().unwrap();
+        if let Some(repo) = state_guard.local_repositories.iter_mut().find(|r| r.id == repo_id) {
+            repo.game_versions = display_names;
+            repo.server_options = original_tags;
+            repo.game_version = current_version;
+            repo.last_sync_time = Some(sync_time);
+            Some(repo.clone())
+        } else {
+            None
+        }
+    };
+
+    if let Some(repo) = result {
+        save_state(app, state).ok();
+        return Ok(repo);
     }
 
     Err("Repository not found".to_string())
