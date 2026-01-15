@@ -409,3 +409,29 @@
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
 }
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 12px;
+}
+
+.loading-state .spinner {
+  font-size: 32px;
+  animation: spin 1s linear infinite;
+}
+
+.loading-state p {
+  color: #a0a0a0;
+  font-size: 14px;
+  margin: 0;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

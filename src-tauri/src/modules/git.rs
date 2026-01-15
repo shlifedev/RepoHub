@@ -67,6 +67,48 @@ impl Git {
         }
     }
 
+    /// Check if a specific remote branch exists (e.g., "dev", "qa")
+    pub async fn has_remote_branch(work_dir: &str, branch_name: &str) -> bool {
+        if let Some(branches) = Self::remote_branch_list(work_dir).await {
+            branches.iter().any(|b| {
+                let normalized = b.replace("origin/", "");
+                normalized.eq_ignore_ascii_case(branch_name)
+            })
+        } else {
+            false
+        }
+    }
+
+    /// Checkout to a remote branch with fetch and pull
+    pub async fn checkout_remote_branch(work_dir: &str, branch: &str, discard_all: bool) -> bool {
+        if discard_all {
+            Self::reset_hard(work_dir).await;
+        }
+        
+        Self::fetch(work_dir).await;
+        
+        let (has_error, _) = Self::run_command(work_dir, &format!("checkout {}", branch)).await;
+        
+        if has_error {
+            let (has_error2, _) = Self::run_command(
+                work_dir, 
+                &format!("checkout -b {} origin/{}", branch, branch)
+            ).await;
+            
+            if has_error2 {
+                let (has_error3, _) = Self::run_command(work_dir, &format!("checkout {}", branch)).await;
+                if !has_error3 {
+                    Self::run_command(work_dir, "pull").await;
+                }
+                return !has_error3;
+            }
+        }
+        
+        Self::run_command(work_dir, "pull").await;
+        
+        !has_error
+    }
+
     pub async fn current_branch(work_dir: &str) -> Option<String> {
         let (has_error, output) = Self::run_command(work_dir, "rev-parse --abbrev-ref HEAD").await;
 
@@ -142,26 +184,46 @@ impl Git {
     pub async fn get_filtered_tags(work_dir: &str, limit: usize) -> Option<Vec<(String, String)>> {
         let (has_error, output) = Self::run_command(work_dir, "tag --sort=-creatordate").await;
 
-        if !has_error {
-            let result = String::from_utf8_lossy(&output.stdout);
-            let tags: Vec<(String, String)> = result
-                .lines()
-                .map(|line| line.trim().to_string())
-                .filter(|t| !t.is_empty())
-                .filter(|tag| {
-                    let lower = tag.to_lowercase();
-                    lower.contains("dev") || lower.contains("qa")
-                })
-                .take(limit)
-                .map(|tag| {
-                    let display = Self::format_tag_display(&tag);
-                    (tag, display)
-                })
-                .collect();
-            Some(tags)
-        } else {
-            None
+        if has_error {
+            return None;
         }
+
+        let result = String::from_utf8_lossy(&output.stdout);
+        
+        let mut seen_versions = std::collections::HashSet::new();
+        let mut tags: Vec<(String, String)> = Vec::new();
+        
+        let has_dev = Self::has_remote_branch(work_dir, "dev").await;
+        let has_qa = Self::has_remote_branch(work_dir, "qa").await;
+        
+        if has_dev {
+            tags.push(("BRANCH:dev".to_string(), "dev-latest".to_string()));
+            seen_versions.insert("dev-latest".to_string());
+        }
+        if has_qa {
+            tags.push(("BRANCH:qa".to_string(), "qa-latest".to_string()));
+            seen_versions.insert("qa-latest".to_string());
+        }
+        
+        let tag_entries: Vec<(String, String)> = result
+            .lines()
+            .map(|line| line.trim().to_string())
+            .filter(|t| !t.is_empty())
+            .filter(|tag| {
+                let lower = tag.to_lowercase();
+                lower.contains("dev") || lower.contains("qa")
+            })
+            .map(|tag| {
+                let display = Self::format_tag_display(&tag);
+                (tag, display)
+            })
+            .filter(|(_, display)| seen_versions.insert(display.clone()))
+            .take(limit.saturating_sub(tags.len()))
+            .collect();
+        
+        tags.extend(tag_entries);
+        
+        Some(tags)
     }
 
     fn format_tag_display(tag: &str) -> String {

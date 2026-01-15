@@ -370,9 +370,15 @@ pub async fn change_version(
         return Err("Repository path does not exist".to_string());
     }
 
-    let success = Git::checkout_tag(&repo_path, &tag, true).await;
+    let success = if tag.starts_with("BRANCH:") {
+        let branch_name = tag.trim_start_matches("BRANCH:");
+        Git::checkout_remote_branch(&repo_path, branch_name, true).await
+    } else {
+        Git::checkout_tag(&repo_path, &tag, true).await
+    };
+    
     if !success {
-        return Err("Failed to checkout to tag".to_string());
+        return Err("Failed to checkout".to_string());
     }
 
     let mut state = state.lock().unwrap();

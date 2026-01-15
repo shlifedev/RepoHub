@@ -19,6 +19,7 @@
   let openMenuId = $state<number | null>(null)
   let deleteConfirmModal = $state(false)
   let deleteTarget = $state<number | null>(null)
+  let isChangingVersion = $state(false)
 
   let unlistenProgress: (() => void) | null = null
   let unlistenComplete: (() => void) | null = null
@@ -45,13 +46,15 @@
   }
 
   function closeVersionChangeModal() {
+    if (isChangingVersion) return
     versionChangeModal = false
     versionChangeTarget = null
   }
 
   async function handleVersionChange() {
-    if (!versionChangeTarget) return
+    if (!versionChangeTarget || isChangingVersion) return
 
+    isChangingVersion = true
     const { repoId, newTag } = versionChangeTarget
     const result = await commands.changeVersion(repoId, newTag)
 
@@ -61,6 +64,7 @@
       )
     }
 
+    isChangingVersion = false
     closeVersionChangeModal()
   }
 
@@ -345,12 +349,21 @@
   <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeVersionChangeModal} onkeydown={(e) => e.key === 'Escape' && closeVersionChangeModal()}>
     <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
       <h2>Change Version</h2>
-      <p class="warning-message">
-        모든 변경사항이 사라집니다. 버전을 <strong>{versionChangeTarget?.newVersion}</strong>(으)로 변경하시겠습니까?
-      </p>
+      {#if isChangingVersion}
+        <div class="loading-state">
+          <span class="spinner">↻</span>
+          <p>버전을 변경하는 중입니다...</p>
+        </div>
+      {:else}
+        <p class="warning-message">
+          모든 변경사항이 사라집니다. 버전을 <strong>{versionChangeTarget?.newVersion}</strong>(으)로 변경하시겠습니까?
+        </p>
+      {/if}
       <div class="modal-actions">
-        <button class="btn-secondary" onclick={closeVersionChangeModal}>Cancel</button>
-        <button class="btn-primary" onclick={handleVersionChange}>Change Version</button>
+        <button class="btn-secondary" onclick={closeVersionChangeModal} disabled={isChangingVersion}>Cancel</button>
+        <button class="btn-primary" onclick={handleVersionChange} disabled={isChangingVersion}>
+          {isChangingVersion ? "Changing..." : "Change Version"}
+        </button>
       </div>
     </div>
   </div>
