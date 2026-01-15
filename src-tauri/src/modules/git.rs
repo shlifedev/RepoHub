@@ -3,6 +3,12 @@ use std::io::{BufRead, BufReader};
 use std::process::Stdio;
 use tokio::sync::mpsc;
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 #[derive(Clone, Debug)]
 pub struct CloneProgress {
     pub stage: String,
@@ -20,6 +26,16 @@ impl Git {
         let program = "git";
         let args = command.split_whitespace().collect::<Vec<&str>>();
 
+        #[cfg(windows)]
+        let output = tokio::process::Command::new(program)
+            .args(&args)
+            .current_dir(work_dir)
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()
+            .await
+            .unwrap();
+
+        #[cfg(not(windows))]
         let output = tokio::process::Command::new(program)
             .args(&args)
             .current_dir(work_dir)
@@ -39,9 +55,18 @@ impl Git {
         
         let result = tokio::task::spawn_blocking(move || {
             println!("[Git::clone] spawn_blocking started");
+            
+            #[cfg(windows)]
+            let output = std::process::Command::new("git")
+                .args(["clone", &url, &target])
+                .creation_flags(CREATE_NO_WINDOW)
+                .output();
+
+            #[cfg(not(windows))]
             let output = std::process::Command::new("git")
                 .args(["clone", &url, &target])
                 .output();
+
             println!("[Git::clone] git command finished");
             output
         }).await;
@@ -76,6 +101,21 @@ impl Git {
         println!("[Git::clone_with_progress] Starting clone: {} -> {}", url, target);
         
         let result = tokio::task::spawn_blocking(move || {
+            #[cfg(windows)]
+            let mut child = match std::process::Command::new("git")
+                .args(["clone", "--progress", &url, &target])
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .creation_flags(CREATE_NO_WINDOW)
+                .spawn() {
+                    Ok(child) => child,
+                    Err(e) => {
+                        println!("[Git::clone_with_progress] Spawn error: {}", e);
+                        return false;
+                    }
+                };
+
+            #[cfg(not(windows))]
             let mut child = match std::process::Command::new("git")
                 .args(["clone", "--progress", &url, &target])
                 .stdout(Stdio::piped())
