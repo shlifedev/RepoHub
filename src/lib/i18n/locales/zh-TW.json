@@ -21,7 +21,8 @@
     "changeVersion": "變更版本",
     "changing": "變更中...",
     "cloning": "複製中...",
-    "deleteRepository": "刪除倉庫"
+    "deleteRepository": "刪除倉庫",
+    "openFolder": "開啟資料夾"
   },
   "modal": {
     "addRepository": "新增倉庫",

@@ -35,6 +35,13 @@ pub struct CloneProgressEvent {
     pub repo_name: String,
     pub progress: u32,
     pub message: String,
+    #[serde(rename = "receivedBytes")]
+    pub received_bytes: Option<f64>,
+    #[serde(rename = "totalObjects")]
+    pub total_objects: Option<u32>,
+    #[serde(rename = "receivedObjects")]
+    pub received_objects: Option<u32>,
+    pub speed: Option<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Type, Event)]

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte"
   import { events, commands, type RepositoryInfo } from "$lib/bindings"
+  import { revealItemInDir } from "@tauri-apps/plugin-opener"
   import { _, isLoading } from "svelte-i18n"
   import "$lib/i18n"
   import "./page.css"
@@ -95,6 +96,11 @@
     deleteTarget = repoId
     deleteConfirmModal = true
     closeMenu()
+  }
+
+  async function handleOpenFolder(path: string) {
+    closeMenu()
+    await revealItemInDir(path)
   }
 
   function closeDeleteConfirm() {
@@ -255,10 +261,14 @@
           </div>
         </div>
         <div class="cell settings-cell">
-          <button class="icon-btn" onclick={() => toggleMenu(repo.id)}>⋯</button>
+          <button class="icon-btn" onclick={() => toggleMenu(repo.id)}>☰</button>
           {#if openMenuId === repo.id}
             <div class="hamburger-menu">
-              <button class="menu-item" onclick={() => openDeleteConfirm(repo.id)}>
+              <button class="menu-item" onclick={() => handleOpenFolder(repo.path)}>
+                {$_("actions.openFolder")}
+              </button>
+              <div class="menu-divider"></div>
+              <button class="menu-item danger" onclick={() => openDeleteConfirm(repo.id)}>
                 {$_("actions.deleteRepository")}
               </button>
             </div>

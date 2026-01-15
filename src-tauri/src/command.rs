@@ -2,9 +2,10 @@ use std::sync::Mutex;
 use std::path::Path;
 use tauri::{AppHandle, State};
 use tauri_plugin_store::StoreExt;
+use tokio::sync::mpsc;
 use crate::AppState;
 use crate::modules::types::{RepositoryInfo, CloneProgressEvent, CloneCompleteEvent, TagInfo};
-use crate::modules::git::Git;
+use crate::modules::git::{Git, CloneProgress};
 use tauri_specta::Event;
 
 #[tauri::command]
@@ -80,21 +81,56 @@ pub async fn clone_repository(
         repo_name: project_name.clone(),
         progress: 0,
         message: "Starting...".to_string(),
+        received_bytes: None,
+        total_objects: None,
+        received_objects: None,
+        speed: None,
     }.emit(&app).ok();
 
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
-    println!("[DEBUG] Emitting 10% progress");
+    let (tx, mut rx) = mpsc::channel::<CloneProgress>(100);
+    
+    let app_clone = app.clone();
+    let project_name_clone = project_name.clone();
+    
+    let progress_task = tokio::spawn(async move {
+        while let Some(progress) = rx.recv().await {
+            let message = match progress.stage.as_str() {
+                "Receiving" => {
+                    if let (Some(bytes), Some(spd)) = (progress.received_bytes, &progress.speed) {
+                        let mb = bytes as f64 / (1024.0 * 1024.0);
+                        format!("Receiving objects... {:.1} MB | {}", mb, spd)
+                    } else if let Some(bytes) = progress.received_bytes {
+                        let mb = bytes as f64 / (1024.0 * 1024.0);
+                        format!("Receiving objects... {:.1} MB", mb)
+                    } else {
+                        "Receiving objects...".to_string()
+                    }
+                },
+                "Resolving" => "Resolving deltas...".to_string(),
+                "Compressing" => "Compressing objects...".to_string(),
+                "Counting" => "Counting objects...".to_string(),
+                _ => progress.stage.clone(),
+            };
 
-    CloneProgressEvent {
-        repo_name: project_name.clone(),
-        progress: 10,
-        message: "Cloning repository...".to_string(),
-    }.emit(&app).ok();
+            CloneProgressEvent {
+                repo_name: project_name_clone.clone(),
+                progress: progress.progress,
+                message,
+                received_bytes: progress.received_bytes,
+                total_objects: progress.total_objects,
+                received_objects: progress.received_objects,
+                speed: progress.speed,
+            }.emit(&app_clone).ok();
+        }
+    });
 
-    println!("[DEBUG] Calling Git::clone");
-    let clone_result = Git::clone(&temp_path, &remote_url).await;
-    println!("[DEBUG] Git::clone returned: {}", clone_result);
+    println!("[DEBUG] Calling Git::clone_with_progress");
+    let clone_result = Git::clone_with_progress(&temp_path, &remote_url, tx).await;
+    println!("[DEBUG] Git::clone_with_progress returned: {}", clone_result);
+    
+    progress_task.abort();
 
     if !clone_result {
         if Path::new(&temp_path).exists() {
@@ -112,12 +148,20 @@ pub async fn clone_repository(
         repo_name: project_name.clone(),
         progress: 60,
         message: "Fetching tags...".to_string(),
+        received_bytes: None,
+        total_objects: None,
+        received_objects: None,
+        speed: None,
     }.emit(&app).ok();
 
     CloneProgressEvent {
         repo_name: project_name.clone(),
         progress: 80,
         message: "Moving to final location...".to_string(),
+        received_bytes: None,
+        total_objects: None,
+        received_objects: None,
+        speed: None,
     }.emit(&app).ok();
 
     if let Err(e) = std::fs::rename(&temp_path, &final_path) {
@@ -142,6 +186,10 @@ pub async fn clone_repository(
         repo_name: project_name.clone(),
         progress: 90,
         message: "Saving repository info...".to_string(),
+        received_bytes: None,
+        total_objects: None,
+        received_objects: None,
+        speed: None,
     }.emit(&app).ok();
 
     let new_repo = {
@@ -172,6 +220,10 @@ pub async fn clone_repository(
         repo_name: project_name.clone(),
         progress: 100,
         message: "Clone complete!".to_string(),
+        received_bytes: None,
+        total_objects: None,
+        received_objects: None,
+        speed: None,
     }.emit(&app).ok();
 
     CloneCompleteEvent {

@@ -21,7 +21,8 @@
     "changeVersion": "Change Version",
     "changing": "Changing...",
     "cloning": "Cloning...",
-    "deleteRepository": "Delete Repository"
+    "deleteRepository": "Delete Repository",
+    "openFolder": "Open Folder"
   },
   "modal": {
     "addRepository": "Add Repository",

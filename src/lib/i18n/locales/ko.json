@@ -21,7 +21,8 @@
     "changeVersion": "버전 변경",
     "changing": "변경 중...",
     "cloning": "복제 중...",
-    "deleteRepository": "리포지토리 삭제"
+    "deleteRepository": "리포지토리 삭제",
+    "openFolder": "폴더 열기"
   },
   "modal": {
     "addRepository": "리포지토리 추가",

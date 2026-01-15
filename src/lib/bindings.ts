@@ -107,7 +107,7 @@ cloneProgressEvent: "clone-progress-event"
 
 export type AppInitializeEvent = { repository_datas: RepositoryInfo[]; auth_token: string; root_path: string; app_version: string }
 export type CloneCompleteEvent = { repo_name: string; success: boolean; error_message: string | null }
-export type CloneProgressEvent = { repo_name: string; progress: number; message: string }
+export type CloneProgressEvent = { repo_name: string; progress: number; message: string; receivedBytes: number | null; totalObjects: number | null; receivedObjects: number | null; speed: string | null }
 export type RepositoryInfo = { id: number; name: string; remote_url: string; branch: string; path: string; gameVersion: string; gameVersions: string[]; server: string; serverOptions: string[]; hasWarning: boolean; lastSyncTime: string | null }
 export type TagInfo = { originalTag: string; displayName: string }
 

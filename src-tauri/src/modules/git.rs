@@ -1,4 +1,17 @@
 use std::process::Output;
+use std::io::{BufRead, BufReader};
+use std::process::Stdio;
+use tokio::sync::mpsc;
+
+#[derive(Clone, Debug)]
+pub struct CloneProgress {
+    pub stage: String,
+    pub progress: u32,
+    pub received_objects: Option<u32>,
+    pub total_objects: Option<u32>,
+    pub received_bytes: Option<f64>,
+    pub speed: Option<String>,
+}
 
 pub struct Git;
 
@@ -50,6 +63,186 @@ impl Git {
                 false
             },
         }
+    }
+
+    pub async fn clone_with_progress(
+        target_dir: &str, 
+        remote_url: &str,
+        progress_tx: mpsc::Sender<CloneProgress>
+    ) -> bool {
+        let target = target_dir.to_string();
+        let url = remote_url.to_string();
+        
+        println!("[Git::clone_with_progress] Starting clone: {} -> {}", url, target);
+        
+        let result = tokio::task::spawn_blocking(move || {
+            let mut child = match std::process::Command::new("git")
+                .args(["clone", "--progress", &url, &target])
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn() {
+                    Ok(child) => child,
+                    Err(e) => {
+                        println!("[Git::clone_with_progress] Spawn error: {}", e);
+                        return false;
+                    }
+                };
+
+            let stderr = child.stderr.take().expect("Failed to capture stderr");
+            let reader = BufReader::new(stderr);
+
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    if let Some(progress) = Self::parse_git_progress(&line) {
+                        let _ = progress_tx.blocking_send(progress);
+                    }
+                }
+            }
+
+            match child.wait() {
+                Ok(status) => status.success(),
+                Err(e) => {
+                    println!("[Git::clone_with_progress] Wait error: {}", e);
+                    false
+                }
+            }
+        }).await;
+
+        result.unwrap_or(false)
+    }
+
+    fn parse_git_progress(line: &str) -> Option<CloneProgress> {
+        let line = line.trim();
+        
+        if line.contains("Receiving objects:") {
+            return Self::parse_receiving_objects(line);
+        } else if line.contains("Resolving deltas:") {
+            return Self::parse_resolving_deltas(line);
+        } else if line.contains("Counting objects:") || line.contains("Enumerating objects:") {
+            return Some(CloneProgress {
+                stage: "Counting".to_string(),
+                progress: 5,
+                received_objects: None,
+                total_objects: None,
+                received_bytes: None,
+                speed: None,
+            });
+        } else if line.contains("Compressing objects:") {
+            return Self::parse_compressing_objects(line);
+        }
+        
+        None
+    }
+
+    fn parse_receiving_objects(line: &str) -> Option<CloneProgress> {
+        let mut progress: u32 = 0;
+        let mut received: Option<u32> = None;
+        let mut total: Option<u32> = None;
+        let mut bytes: Option<f64> = None;
+        let mut speed: Option<String> = None;
+
+        if let Some(pct_idx) = line.find('%') {
+            let start = line[..pct_idx].rfind(|c: char| !c.is_ascii_digit()).map(|i| i + 1).unwrap_or(0);
+            if let Ok(p) = line[start..pct_idx].trim().parse::<u32>() {
+                progress = 10 + (p * 50 / 100);
+            }
+        }
+
+        if let Some(paren_start) = line.find('(') {
+            if let Some(paren_end) = line.find(')') {
+                let inner = &line[paren_start + 1..paren_end];
+                let parts: Vec<&str> = inner.split('/').collect();
+                if parts.len() == 2 {
+                    received = parts[0].trim().parse().ok();
+                    total = parts[1].trim().parse().ok();
+                }
+            }
+        }
+
+        if let Some(comma_idx) = line.find("),") {
+            let after_paren = &line[comma_idx + 2..];
+            let size_parts: Vec<&str> = after_paren.split('|').collect();
+            
+            if !size_parts.is_empty() {
+                let size_str = size_parts[0].trim();
+                bytes = Self::parse_size_to_bytes(size_str);
+            }
+            
+            if size_parts.len() > 1 {
+                speed = Some(size_parts[1].trim().to_string());
+            }
+        }
+
+        Some(CloneProgress {
+            stage: "Receiving".to_string(),
+            progress,
+            received_objects: received,
+            total_objects: total,
+            received_bytes: bytes,
+            speed,
+        })
+    }
+
+    fn parse_resolving_deltas(line: &str) -> Option<CloneProgress> {
+        let mut progress: u32 = 60;
+
+        if let Some(pct_idx) = line.find('%') {
+            let start = line[..pct_idx].rfind(|c: char| !c.is_ascii_digit()).map(|i| i + 1).unwrap_or(0);
+            if let Ok(p) = line[start..pct_idx].trim().parse::<u32>() {
+                progress = 60 + (p * 30 / 100);
+            }
+        }
+
+        Some(CloneProgress {
+            stage: "Resolving".to_string(),
+            progress,
+            received_objects: None,
+            total_objects: None,
+            received_bytes: None,
+            speed: None,
+        })
+    }
+
+    fn parse_compressing_objects(line: &str) -> Option<CloneProgress> {
+        let mut progress: u32 = 8;
+
+        if let Some(pct_idx) = line.find('%') {
+            let start = line[..pct_idx].rfind(|c: char| !c.is_ascii_digit()).map(|i| i + 1).unwrap_or(0);
+            if let Ok(p) = line[start..pct_idx].trim().parse::<u32>() {
+                progress = 5 + (p * 5 / 100);
+            }
+        }
+
+        Some(CloneProgress {
+            stage: "Compressing".to_string(),
+            progress,
+            received_objects: None,
+            total_objects: None,
+            received_bytes: None,
+            speed: None,
+        })
+    }
+
+    fn parse_size_to_bytes(size_str: &str) -> Option<f64> {
+        let size_str = size_str.trim();
+        let parts: Vec<&str> = size_str.split_whitespace().collect();
+        
+        if parts.is_empty() {
+            return None;
+        }
+
+        let num: f64 = parts[0].parse().ok()?;
+        let unit = parts.get(1).unwrap_or(&"B");
+
+        let multiplier: u64 = match unit.to_uppercase().as_str() {
+            "B" | "BYTES" => 1,
+            "KIB" | "KB" => 1024,
+            "MIB" | "MB" => 1024 * 1024,
+            "GIB" | "GB" => 1024 * 1024 * 1024,
+            _ => 1,
+        };
+
+        Some(num * multiplier as f64)
     }
 
     pub async fn remote_branch_list(work_dir: &str) -> Option<Vec<String>> {

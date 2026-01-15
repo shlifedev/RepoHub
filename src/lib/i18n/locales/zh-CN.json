@@ -21,7 +21,8 @@
     "changeVersion": "更改版本",
     "changing": "更改中...",
     "cloning": "克隆中...",
-    "deleteRepository": "删除仓库"
+    "deleteRepository": "删除仓库",
+    "openFolder": "打开文件夹"
   },
   "modal": {
     "addRepository": "添加仓库",

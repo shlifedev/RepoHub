@@ -21,7 +21,8 @@
     "changeVersion": "バージョン変更",
     "changing": "変更中...",
     "cloning": "クローン中...",
-    "deleteRepository": "リポジトリを削除"
+    "deleteRepository": "リポジトリを削除",
+    "openFolder": "フォルダを開く"
   },
   "modal": {
     "addRepository": "リポジトリを追加",
