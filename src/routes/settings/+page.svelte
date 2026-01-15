@@ -2,21 +2,33 @@
   import { onMount } from "svelte"
   import { open } from "@tauri-apps/plugin-dialog"
   import { commands } from "$lib/bindings"
+  import { _, locale, isLoading } from "svelte-i18n"
+  import "$lib/i18n"
 
   let rootPath = $state("")
+  let currentLocale = $state("en")
+
+  const supportedLocales = [
+    { code: "en", name: "English" },
+    { code: "ko", name: "한국어" },
+    { code: "ja", name: "日本語" },
+    { code: "zh-CN", name: "简体中文" },
+    { code: "zh-TW", name: "繁體中文" }
+  ]
 
   onMount(async () => {
     const path = await commands.getRootPath()
     if (path) {
       rootPath = path
     }
+    currentLocale = localStorage.getItem("locale") ?? "en"
   })
 
   async function selectRootPath() {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: "Select Repository Root Directory"
+      title: $_("settings.rootPathDescription")
     })
 
     if (selected && typeof selected === "string") {
@@ -24,37 +36,78 @@
       rootPath = result
     }
   }
+
+  function handleLocaleChange(e: Event) {
+    const target = e.target as HTMLSelectElement
+    const newLocale = target.value
+    currentLocale = newLocale
+    locale.set(newLocale)
+    localStorage.setItem("locale", newLocale)
+  }
 </script>
 
-<div class="settings-container">
-  <header class="settings-header">
-    <h1>Settings</h1>
-  </header>
+{#if $isLoading}
+  <div class="loading">Loading...</div>
+{:else}
+  <div class="settings-container">
+    <header class="settings-header">
+      <h1>{$_("settings.title")}</h1>
+    </header>
 
-  <div class="settings-content">
-    <section class="settings-section">
-      <h2>Repository</h2>
-      <div class="setting-item">
-        <div class="setting-info">
-          <label for="root-path">Root Path</label>
-          <p class="setting-description">
-            Directory where repositories will be cloned
-          </p>
+    <div class="settings-content">
+      <section class="settings-section">
+        <h2>{$_("settings.repository")}</h2>
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="root-path">{$_("settings.rootPath")}</label>
+            <p class="setting-description">
+              {$_("settings.rootPathDescription")}
+            </p>
+          </div>
+          <div class="path-selector">
+            <span class="current-path" title={rootPath}>
+              {rootPath || $_("settings.notSet")}
+            </span>
+            <button class="btn-browse" onclick={selectRootPath}>
+              {$_("actions.browse")}
+            </button>
+          </div>
         </div>
-        <div class="path-selector">
-          <span class="current-path" title={rootPath}>
-            {rootPath || "Not set"}
-          </span>
-          <button class="btn-browse" onclick={selectRootPath}>
-            Browse
-          </button>
+      </section>
+
+      <section class="settings-section">
+        <h2>{$_("settings.language")}</h2>
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="language-select">{$_("settings.language")}</label>
+            <p class="setting-description">
+              {$_("settings.languageDescription")}
+            </p>
+          </div>
+          <select
+            id="language-select"
+            value={currentLocale}
+            onchange={handleLocaleChange}
+          >
+            {#each supportedLocales as lang}
+              <option value={lang.code}>{lang.name}</option>
+            {/each}
+          </select>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
+  .loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #808080;
+  }
+
   .settings-container {
     display: flex;
     flex-direction: column;
@@ -133,69 +186,6 @@
   select:focus {
     outline: none;
     border-color: #4a9eff;
-  }
-
-  /* Toggle Switch */
-  .toggle {
-    position: relative;
-    display: inline-block;
-    width: 48px;
-    height: 26px;
-  }
-
-  .toggle input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #404040;
-    transition: 0.3s;
-    border-radius: 26px;
-  }
-
-  .slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: 0.3s;
-    border-radius: 50%;
-  }
-
-  input:checked + .slider {
-    background-color: #1e88e5;
-  }
-
-  input:checked + .slider:before {
-    transform: translateX(22px);
-  }
-
-  .about-info {
-    padding: 20px;
-    background-color: #202020;
-    border-radius: 8px;
-    border: 1px solid #333;
-  }
-
-  .about-info p {
-    margin: 8px 0;
-    font-size: 14px;
-    color: #b0b0b0;
-  }
-
-  .about-info strong {
-    color: #fff;
   }
 
   .path-selector {

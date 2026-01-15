@@ -1,0 +1,62 @@
+{
+  "app": {
+    "name": "RepoHub"
+  },
+  "header": {
+    "projects": "プロジェクト",
+    "addRepository": "リポジトリを追加"
+  },
+  "table": {
+    "name": "名前",
+    "gameVersion": "ゲームバージョン",
+    "lastSync": "最終同期"
+  },
+  "actions": {
+    "refresh": "更新",
+    "delete": "削除",
+    "cancel": "キャンセル",
+    "add": "追加",
+    "save": "保存",
+    "browse": "参照",
+    "changeVersion": "バージョン変更",
+    "changing": "変更中...",
+    "cloning": "クローン中...",
+    "deleteRepository": "リポジトリを削除"
+  },
+  "modal": {
+    "addRepository": "リポジトリを追加",
+    "repositoryName": "リポジトリ名",
+    "repositoryUrl": "リポジトリURL",
+    "namePlaceholder": "例: MyProject (英数字、_、- のみ)",
+    "urlPlaceholder": "例: https://github.com/user/repo.git"
+  },
+  "deleteModal": {
+    "title": "リポジトリを削除",
+    "warning": "ローカルフォルダを含め、リポジトリが完全に削除されます。続行しますか？"
+  },
+  "versionModal": {
+    "title": "バージョン変更",
+    "warning": "すべての変更が失われます。バージョンを{version}に変更しますか？",
+    "loading": "バージョンを変更しています..."
+  },
+  "settings": {
+    "title": "設定",
+    "repository": "リポジトリ",
+    "rootPath": "ルートパス",
+    "rootPathDescription": "リポジトリがクローンされるディレクトリ",
+    "notSet": "未設定",
+    "language": "言語",
+    "languageDescription": "表示言語を選択"
+  },
+  "errors": {
+    "nameInvalid": "英数字、アンダースコア、ダッシュのみ使用できます",
+    "urlRequired": "リポジトリURLを入力してください"
+  },
+  "languages": {
+    "en": "英語",
+    "ko": "韓国語",
+    "ja": "日本語",
+    "zh-CN": "中国語（簡体字）",
+    "zh-TW": "中国語（繁体字）"
+  }
+}

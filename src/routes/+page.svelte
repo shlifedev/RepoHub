@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte"
   import { events, commands, type RepositoryInfo } from "$lib/bindings"
+  import { _, isLoading } from "svelte-i18n"
+  import "$lib/i18n"
   import "./page.css"
 
   let repositories = $state<RepositoryInfo[]>([])
-  let searchQuery = $state("")
   let showModal = $state(false)
   let newRepoName = $state("")
   let newRepoUrl = $state("")
@@ -120,7 +121,7 @@
     }
     const valid = /^[a-zA-Z0-9_-]+$/.test(name)
     if (!valid) {
-      nameError = "Only letters, numbers, underscores, and dashes allowed"
+      nameError = $_("errors.nameInvalid")
       return false
     }
     nameError = ""
@@ -132,7 +133,7 @@
       return
     }
     if (!newRepoUrl.trim()) {
-      errorMessage = "Repository URL is required"
+      errorMessage = $_("errors.urlRequired")
       return
     }
 
@@ -162,7 +163,6 @@
   }
 
   onMount(async () => {
-    await commands.loadState()
     repositories = await commands.getRepositories()
 
     unlistenProgress = await events.cloneProgressEvent.listen((e) => {
@@ -185,186 +185,184 @@
   })
 </script>
 
-
-<!-- 헤더 -->
-<header class="header">
-  <div class="header-main">
-    <h1>Projects</h1>
-    <div class="header-controls">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Search" bind:value={searchQuery} />
-      </div>
-      <button class="btn-secondary dropdown"> Add ▼ </button>
-      <button class="btn-primary" onclick={openModal}>
-        Add Repository
-      </button>
-    </div>
-  </div>
-
-  <!-- 테이블 헤더 -->
-  <div class="table-header">
-    <div class="header-cell name-cell">Name</div>
-    <div class="header-cell version-cell">Game Version</div>
-    <div class="header-cell sync-cell">Last Sync</div>
-    <div class="header-cell settings-cell">⚙️</div>
-  </div>
-</header>
-
-<!-- 레포지토리 리스트 -->
-<div class="repository-list">
-  {#each repositories as repo}
-    <div class="repo-item">
-      <div class="cell name-cell">
-        <div class="repo-info">
-          {#if repo.hasWarning}
-            <span class="warning-icon">⚠️</span>
-          {/if}
-          <div>
-            <div class="repo-name">{repo.name}</div>
-            <div class="repo-path">{repo.path}</div>
-          </div>
-        </div>
-      </div>
-      <div class="cell version-cell">
-        <select
-          value={repo.gameVersion}
-          onchange={(e) => {
-            const target = e.target as HTMLSelectElement
-            const index = repo.gameVersions.indexOf(target.value)
-            if (index !== -1 && repo.serverOptions[index]) {
-              openVersionChangeModal(repo.id, target.value, repo.serverOptions[index])
-            }
-          }}
-          class="version-select"
-        >
-          {#each repo.gameVersions as version}
-            <option value={version}>{version}</option>
-          {/each}
-        </select>
-      </div>
-      <div class="cell sync-cell">
-        <div class="sync-info">
-          <button
-            class="refresh-btn"
-            onclick={() => handleRefresh(repo.id)}
-            disabled={isRefreshing.has(repo.id)}
-          >
-            {isRefreshing.has(repo.id) ? "↻" : "Refresh"}
-          </button>
-          {#if repo.lastSyncTime}
-            <span class="sync-time">{repo.lastSyncTime}</span>
-          {/if}
-        </div>
-      </div>
-      <div class="cell settings-cell">
-        <button class="icon-btn" onclick={() => toggleMenu(repo.id)}>⋯</button>
-        {#if openMenuId === repo.id}
-          <div class="hamburger-menu">
-            <button class="menu-item" onclick={() => openDeleteConfirm(repo.id)}>
-              Delete Repository
-            </button>
-          </div>
-        {/if}
-      </div>
-    </div>
-  {/each}
-</div>
-
-<!-- 모달 -->
-{#if showModal}
-  <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeModal} onkeydown={(e) => e.key === 'Escape' && closeModal()}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
-      <h2>Add Repository</h2>
-      <form onsubmit={(e) => { e.preventDefault(); handleAddRepository(); }}>
-        <div class="form-group">
-          <label for="repo-name">Repository Name</label>
-          <input
-            id="repo-name"
-            type="text"
-            placeholder="e.g., MyProject (letters, numbers, _, - only)"
-            bind:value={newRepoName}
-            oninput={() => validateName(newRepoName)}
-            disabled={isCloning}
-            required
-          />
-          {#if nameError}
-            <span class="field-error">{nameError}</span>
-          {/if}
-        </div>
-        <div class="form-group">
-          <label for="repo-url">Repository URL</label>
-          <input
-            id="repo-url"
-            type="text"
-            placeholder="e.g., https://github.com/user/repo.git"
-            bind:value={newRepoUrl}
-            disabled={isCloning}
-            required
-          />
-        </div>
-
-        {#if isCloning}
-          <div class="clone-progress">
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: {cloneProgress}%"></div>
-            </div>
-            <span class="progress-text">{cloneMessage} ({cloneProgress}%)</span>
-          </div>
-        {/if}
-
-        {#if errorMessage}
-          <div class="error-message">{errorMessage}</div>
-        {/if}
-
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick={closeModal}>
-            Cancel
-          </button>
-          <button type="submit" class="btn-primary" disabled={isCloning || !!nameError}>
-            {isCloning ? "Cloning..." : "Add"}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-{/if}
-
-<!-- 삭제 확인 모달 -->
-{#if deleteConfirmModal}
-  <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeDeleteConfirm} onkeydown={(e) => e.key === 'Escape' && closeDeleteConfirm()}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
-      <h2>Delete Repository</h2>
-      <p class="warning-message">로컬 폴더를 포함하여 리포지토리가 완전히 삭제됩니다. 계속하시겠습니까?</p>
-      <div class="modal-actions">
-        <button class="btn-secondary" onclick={closeDeleteConfirm}>Cancel</button>
-        <button class="btn-primary" onclick={handleDelete}>Delete</button>
-      </div>
-    </div>
-  </div>
-{/if}
-
-<!-- 버전 변경 확인 모달 -->
-{#if versionChangeModal}
-  <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeVersionChangeModal} onkeydown={(e) => e.key === 'Escape' && closeVersionChangeModal()}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
-      <h2>Change Version</h2>
-      {#if isChangingVersion}
-        <div class="loading-state">
-          <span class="spinner">↻</span>
-          <p>버전을 변경하는 중입니다...</p>
-        </div>
-      {:else}
-        <p class="warning-message">
-          모든 변경사항이 사라집니다. 버전을 <strong>{versionChangeTarget?.newVersion}</strong>(으)로 변경하시겠습니까?
-        </p>
-      {/if}
-      <div class="modal-actions">
-        <button class="btn-secondary" onclick={closeVersionChangeModal} disabled={isChangingVersion}>Cancel</button>
-        <button class="btn-primary" onclick={handleVersionChange} disabled={isChangingVersion}>
-          {isChangingVersion ? "Changing..." : "Change Version"}
+{#if $isLoading}
+  <div class="loading">Loading...</div>
+{:else}
+  <!-- 헤더 -->
+  <header class="header">
+    <div class="header-main">
+      <h1>{$_("header.projects")}</h1>
+      <div class="header-controls">
+        <button class="btn-primary" onclick={openModal}>
+          {$_("header.addRepository")}
         </button>
       </div>
     </div>
+
+    <!-- 테이블 헤더 -->
+    <div class="table-header">
+      <div class="header-cell name-cell">{$_("table.name")}</div>
+      <div class="header-cell version-cell">{$_("table.gameVersion")}</div>
+      <div class="header-cell sync-cell">{$_("table.lastSync")}</div>
+      <div class="header-cell settings-cell">⚙️</div>
+    </div>
+  </header>
+
+  <!-- 레포지토리 리스트 -->
+  <div class="repository-list">
+    {#each repositories as repo}
+      <div class="repo-item">
+        <div class="cell name-cell">
+          <div class="repo-info">
+            {#if repo.hasWarning}
+              <span class="warning-icon">⚠️</span>
+            {/if}
+            <div>
+              <div class="repo-name">{repo.name}</div>
+              <div class="repo-path">{repo.path}</div>
+            </div>
+          </div>
+        </div>
+        <div class="cell version-cell">
+          <select
+            value={repo.gameVersion}
+            onchange={(e) => {
+              const target = e.target as HTMLSelectElement
+              const index = repo.gameVersions.indexOf(target.value)
+              if (index !== -1 && repo.serverOptions[index]) {
+                openVersionChangeModal(repo.id, target.value, repo.serverOptions[index])
+              }
+            }}
+            class="version-select"
+          >
+            {#each repo.gameVersions as version}
+              <option value={version}>{version}</option>
+            {/each}
+          </select>
+        </div>
+        <div class="cell sync-cell">
+          <div class="sync-info">
+            <button
+              class="refresh-btn"
+              onclick={() => handleRefresh(repo.id)}
+              disabled={isRefreshing.has(repo.id)}
+            >
+              {isRefreshing.has(repo.id) ? "↻" : $_("actions.refresh")}
+            </button>
+            {#if repo.lastSyncTime}
+              <span class="sync-time">{repo.lastSyncTime}</span>
+            {/if}
+          </div>
+        </div>
+        <div class="cell settings-cell">
+          <button class="icon-btn" onclick={() => toggleMenu(repo.id)}>⋯</button>
+          {#if openMenuId === repo.id}
+            <div class="hamburger-menu">
+              <button class="menu-item" onclick={() => openDeleteConfirm(repo.id)}>
+                {$_("actions.deleteRepository")}
+              </button>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {/each}
   </div>
+
+  <!-- 모달 -->
+  {#if showModal}
+    <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeModal} onkeydown={(e) => e.key === 'Escape' && closeModal()}>
+      <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+        <h2>{$_("modal.addRepository")}</h2>
+        <form onsubmit={(e) => { e.preventDefault(); handleAddRepository(); }}>
+          <div class="form-group">
+            <label for="repo-name">{$_("modal.repositoryName")}</label>
+            <input
+              id="repo-name"
+              type="text"
+              placeholder={$_("modal.namePlaceholder")}
+              bind:value={newRepoName}
+              oninput={() => validateName(newRepoName)}
+              disabled={isCloning}
+              required
+            />
+            {#if nameError}
+              <span class="field-error">{nameError}</span>
+            {/if}
+          </div>
+          <div class="form-group">
+            <label for="repo-url">{$_("modal.repositoryUrl")}</label>
+            <input
+              id="repo-url"
+              type="text"
+              placeholder={$_("modal.urlPlaceholder")}
+              bind:value={newRepoUrl}
+              disabled={isCloning}
+              required
+            />
+          </div>
+
+          {#if isCloning}
+            <div class="clone-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: {cloneProgress}%"></div>
+              </div>
+              <span class="progress-text">{cloneMessage} ({cloneProgress}%)</span>
+            </div>
+          {/if}
+
+          {#if errorMessage}
+            <div class="error-message">{errorMessage}</div>
+          {/if}
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick={closeModal}>
+              {$_("actions.cancel")}
+            </button>
+            <button type="submit" class="btn-primary" disabled={isCloning || !!nameError}>
+              {isCloning ? $_("actions.cloning") : $_("actions.add")}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {/if}
+
+  <!-- 삭제 확인 모달 -->
+  {#if deleteConfirmModal}
+    <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeDeleteConfirm} onkeydown={(e) => e.key === 'Escape' && closeDeleteConfirm()}>
+      <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+        <h2>{$_("deleteModal.title")}</h2>
+        <p class="warning-message">{$_("deleteModal.warning")}</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick={closeDeleteConfirm}>{$_("actions.cancel")}</button>
+          <button class="btn-primary" onclick={handleDelete}>{$_("actions.delete")}</button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- 버전 변경 확인 모달 -->
+  {#if versionChangeModal}
+    <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeVersionChangeModal} onkeydown={(e) => e.key === 'Escape' && closeVersionChangeModal()}>
+      <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+        <h2>{$_("versionModal.title")}</h2>
+        {#if isChangingVersion}
+          <div class="loading-state">
+            <span class="spinner">↻</span>
+            <p>{$_("versionModal.loading")}</p>
+          </div>
+        {:else}
+          <p class="warning-message">
+            {$_("versionModal.warning", { values: { version: versionChangeTarget?.newVersion ?? "" } })}
+          </p>
+        {/if}
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick={closeVersionChangeModal} disabled={isChangingVersion}>{$_("actions.cancel")}</button>
+          <button class="btn-primary" onclick={handleVersionChange} disabled={isChangingVersion}>
+            {isChangingVersion ? $_("actions.changing") : $_("actions.changeVersion")}
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
 {/if}

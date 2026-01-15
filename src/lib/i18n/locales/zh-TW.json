@@ -1,0 +1,62 @@
+{
+  "app": {
+    "name": "RepoHub"
+  },
+  "header": {
+    "projects": "專案",
+    "addRepository": "新增倉庫"
+  },
+  "table": {
+    "name": "名稱",
+    "gameVersion": "遊戲版本",
+    "lastSync": "最後同步"
+  },
+  "actions": {
+    "refresh": "重新整理",
+    "delete": "刪除",
+    "cancel": "取消",
+    "add": "新增",
+    "save": "儲存",
+    "browse": "瀏覽",
+    "changeVersion": "變更版本",
+    "changing": "變更中...",
+    "cloning": "複製中...",
+    "deleteRepository": "刪除倉庫"
+  },
+  "modal": {
+    "addRepository": "新增倉庫",
+    "repositoryName": "倉庫名稱",
+    "repositoryUrl": "倉庫URL",
+    "namePlaceholder": "例如: MyProject（僅限字母、數字、_、-）",
+    "urlPlaceholder": "例如: https://github.com/user/repo.git"
+  },
+  "deleteModal": {
+    "title": "刪除倉庫",
+    "warning": "倉庫將被完全刪除，包括本機檔案。是否繼續？"
+  },
+  "versionModal": {
+    "title": "變更版本",
+    "warning": "所有變更都將遺失。是否要將版本變更為{version}？",
+    "loading": "正在變更版本..."
+  },
+  "settings": {
+    "title": "設定",
+    "repository": "倉庫",
+    "rootPath": "根目錄路徑",
+    "rootPathDescription": "倉庫將被複製到的目錄",
+    "notSet": "未設定",
+    "language": "語言",
+    "languageDescription": "選擇顯示語言"
+  },
+  "errors": {
+    "nameInvalid": "只能使用字母、數字、底線和短橫線",
+    "urlRequired": "請輸入倉庫URL"
+  },
+  "languages": {
+    "en": "英語",
+    "ko": "韓語",
+    "ja": "日語",
+    "zh-CN": "簡體中文",
+    "zh-TW": "繁體中文"
+  }
+}

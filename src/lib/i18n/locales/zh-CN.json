@@ -1,0 +1,62 @@
+{
+  "app": {
+    "name": "RepoHub"
+  },
+  "header": {
+    "projects": "项目",
+    "addRepository": "添加仓库"
+  },
+  "table": {
+    "name": "名称",
+    "gameVersion": "游戏版本",
+    "lastSync": "最后同步"
+  },
+  "actions": {
+    "refresh": "刷新",
+    "delete": "删除",
+    "cancel": "取消",
+    "add": "添加",
+    "save": "保存",
+    "browse": "浏览",
+    "changeVersion": "更改版本",
+    "changing": "更改中...",
+    "cloning": "克隆中...",
+    "deleteRepository": "删除仓库"
+  },
+  "modal": {
+    "addRepository": "添加仓库",
+    "repositoryName": "仓库名称",
+    "repositoryUrl": "仓库URL",
+    "namePlaceholder": "例如: MyProject（仅限字母、数字、_、-）",
+    "urlPlaceholder": "例如: https://github.com/user/repo.git"
+  },
+  "deleteModal": {
+    "title": "删除仓库",
+    "warning": "仓库将被完全删除，包括本地文件。是否继续？"
+  },
+  "versionModal": {
+    "title": "更改版本",
+    "warning": "所有更改都将丢失。是否要将版本更改为{version}？",
+    "loading": "正在更改版本..."
+  },
+  "settings": {
+    "title": "设置",
+    "repository": "仓库",
+    "rootPath": "根路径",
+    "rootPathDescription": "仓库将被克隆到的目录",
+    "notSet": "未设置",
+    "language": "语言",
+    "languageDescription": "选择显示语言"
+  },
+  "errors": {
+    "nameInvalid": "只能使用字母、数字、下划线和短横线",
+    "urlRequired": "请输入仓库URL"
+  },
+  "languages": {
+    "en": "英语",
+    "ko": "韩语",
+    "ja": "日语",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁体中文"
+  }
+}

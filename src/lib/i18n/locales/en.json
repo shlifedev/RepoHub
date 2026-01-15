@@ -1,0 +1,62 @@
+{
+  "app": {
+    "name": "RepoHub"
+  },
+  "header": {
+    "projects": "Projects",
+    "addRepository": "Add Repository"
+  },
+  "table": {
+    "name": "Name",
+    "gameVersion": "Game Version",
+    "lastSync": "Last Sync"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "add": "Add",
+    "save": "Save",
+    "browse": "Browse",
+    "changeVersion": "Change Version",
+    "changing": "Changing...",
+    "cloning": "Cloning...",
+    "deleteRepository": "Delete Repository"
+  },
+  "modal": {
+    "addRepository": "Add Repository",
+    "repositoryName": "Repository Name",
+    "repositoryUrl": "Repository URL",
+    "namePlaceholder": "e.g., MyProject (letters, numbers, _, - only)",
+    "urlPlaceholder": "e.g., https://github.com/user/repo.git"
+  },
+  "deleteModal": {
+    "title": "Delete Repository",
+    "warning": "The repository will be completely deleted including local files. Do you want to continue?"
+  },
+  "versionModal": {
+    "title": "Change Version",
+    "warning": "All changes will be lost. Do you want to change to version {version}?",
+    "loading": "Changing version..."
+  },
+  "settings": {
+    "title": "Settings",
+    "repository": "Repository",
+    "rootPath": "Root Path",
+    "rootPathDescription": "Directory where repositories will be cloned",
+    "notSet": "Not set",
+    "language": "Language",
+    "languageDescription": "Select display language"
+  },
+  "errors": {
+    "nameInvalid": "Only letters, numbers, underscores, and dashes allowed",
+    "urlRequired": "Repository URL is required"
+  },
+  "languages": {
+    "en": "English",
+    "ko": "Korean",
+    "ja": "Japanese",
+    "zh-CN": "Chinese (Simplified)",
+    "zh-TW": "Chinese (Traditional)"
+  }
+}

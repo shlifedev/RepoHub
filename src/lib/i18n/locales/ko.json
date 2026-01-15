@@ -1,0 +1,62 @@
+{
+  "app": {
+    "name": "RepoHub"
+  },
+  "header": {
+    "projects": "프로젝트",
+    "addRepository": "리포지토리 추가"
+  },
+  "table": {
+    "name": "이름",
+    "gameVersion": "게임 버전",
+    "lastSync": "마지막 동기화"
+  },
+  "actions": {
+    "refresh": "새로고침",
+    "delete": "삭제",
+    "cancel": "취소",
+    "add": "추가",
+    "save": "저장",
+    "browse": "찾아보기",
+    "changeVersion": "버전 변경",
+    "changing": "변경 중...",
+    "cloning": "복제 중...",
+    "deleteRepository": "리포지토리 삭제"
+  },
+  "modal": {
+    "addRepository": "리포지토리 추가",
+    "repositoryName": "리포지토리 이름",
+    "repositoryUrl": "리포지토리 URL",
+    "namePlaceholder": "예: MyProject (영문, 숫자, _, - 만 허용)",
+    "urlPlaceholder": "예: https://github.com/user/repo.git"
+  },
+  "deleteModal": {
+    "title": "리포지토리 삭제",
+    "warning": "로컬 폴더를 포함하여 리포지토리가 완전히 삭제됩니다. 계속하시겠습니까?"
+  },
+  "versionModal": {
+    "title": "버전 변경",
+    "warning": "모든 변경사항이 사라집니다. 버전을 {version}(으)로 변경하시겠습니까?",
+    "loading": "버전을 변경하는 중입니다..."
+  },
+  "settings": {
+    "title": "설정",
+    "repository": "리포지토리",
+    "rootPath": "루트 경로",
+    "rootPathDescription": "리포지토리가 복제될 디렉토리",
+    "notSet": "설정되지 않음",
+    "language": "언어",
+    "languageDescription": "표시 언어 선택"
+  },
+  "errors": {
+    "nameInvalid": "영문, 숫자, 밑줄, 대시만 사용할 수 있습니다",
+    "urlRequired": "리포지토리 URL을 입력해주세요"
+  },
+  "languages": {
+    "en": "영어",
+    "ko": "한국어",
+    "ja": "일본어",
+    "zh-CN": "중국어 (간체)",
+    "zh-TW": "중국어 (번체)"
+  }
+}

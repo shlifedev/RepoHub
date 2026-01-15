@@ -62,3 +62,13 @@
 - 버전 변경 중 UI 인터랙션 비활성화
 - 로딩 스피너 및 "버전을 변경하는 중입니다..." 메시지 표시
 - 변경 완료 전까지 Cancel 버튼 포함 모든 버튼 비활성화
+
+### i18n (다국어 지원)
+- `svelte-i18n` 라이브러리 사용
+- 지원 언어: English, 한국어, 日本語, 简体中文, 繁體中文
+- locale 파일 위치: `src/lib/i18n/locales/*.json`
+- Settings 페이지에서 언어 변경 가능 (localStorage에 저장)
+- **새로운 View 추가 시 반드시 i18n 적용 필요**:
+  1. 모든 UI 텍스트는 하드코딩하지 않고 `$_("key")` 형식으로 작성
+  2. 새로운 키는 모든 locale 파일(en, ko, ja, zh-CN, zh-TW)에 추가
+  3. View 상단에 `import { _, isLoading } from "svelte-i18n"` 및 `import "$lib/i18n"` 추가
