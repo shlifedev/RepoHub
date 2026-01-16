@@ -148,6 +148,8 @@
     align-items: center;
     padding: 20px 0;
     border-bottom: 1px solid #282828;
+    gap: 20px;
+    flex-wrap: wrap;
   }
 
   .setting-item:last-child {
@@ -180,7 +182,8 @@
     color: #e0e0e0;
     font-size: 14px;
     cursor: pointer;
-    min-width: 200px;
+    min-width: 150px;
+    max-width: 200px;
   }
 
   select:focus {
@@ -201,6 +204,8 @@
     white-space: nowrap;
     color: #808080;
     font-size: 14px;
+    flex: 1;
+    min-width: 100px;
   }
 
   .btn-browse {
@@ -217,5 +222,37 @@
   .btn-browse:hover {
     background-color: #3d3d3d;
     border-color: #505050;
+  }
+
+  @media (max-width: 700px) {
+    .settings-header {
+      padding: 20px;
+    }
+
+    .settings-header h1 {
+      font-size: 22px;
+    }
+
+    .settings-content {
+      padding: 20px;
+    }
+
+    .setting-item {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .path-selector {
+      width: 100%;
+    }
+
+    .current-path {
+      max-width: none;
+    }
+
+    select {
+      width: 100%;
+      max-width: none;
+    }
   }
 </style>

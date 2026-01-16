@@ -52,13 +52,15 @@
     overflow: hidden;
   }
 
-  /* 사이드바 */
   .sidebar {
     width: 220px;
+    min-width: 60px;
     background-color: #252525;
     display: flex;
     flex-direction: column;
     border-right: 1px solid #333;
+    transition: width 0.2s ease;
+    overflow: hidden;
   }
 
   .logo {
@@ -69,10 +71,12 @@
     font-size: 20px;
     font-weight: 600;
     border-bottom: 1px solid #333;
+    white-space: nowrap;
   }
 
   .logo-icon {
     font-size: 24px;
+    flex-shrink: 0;
   }
 
   .nav {
@@ -89,6 +93,8 @@
     text-decoration: none;
     transition: all 0.2s;
     cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
   }
 
   .nav-item:hover {
@@ -106,6 +112,7 @@
     font-size: 18px;
     width: 24px;
     text-align: center;
+    flex-shrink: 0;
   }
 
   .sidebar-footer {
@@ -113,12 +120,41 @@
     padding: 10px 0;
   }
 
-  /* 메인 컨텐츠 */
   .main-content {
     flex: 1;
     background-color: #1a1a1a;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+  }
+
+  @media (max-width: 800px) {
+    .sidebar {
+      width: 60px;
+    }
+
+    .logo {
+      padding: 15px;
+      justify-content: center;
+    }
+
+    .logo-text {
+      display: none;
+    }
+
+    .nav-item {
+      padding: 12px;
+      justify-content: center;
+    }
+
+    .nav-item span:not(.nav-icon) {
+      display: none;
+    }
+
+    .nav-item.active {
+      border-left: none;
+      border-bottom: 3px solid #4a9eff;
+    }
   }
 </style>
