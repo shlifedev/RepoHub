@@ -22,7 +22,9 @@
     "changing": "更改中...",
     "cloning": "克隆中...",
     "deleteRepository": "删除仓库",
-    "openFolder": "打开文件夹"
+    "openFolder": "打开文件夹",
+    "removeFromList": "从列表中移除",
+    "resetData": "重置所有数据"
   },
   "modal": {
     "addRepository": "添加仓库",
@@ -34,6 +36,14 @@
   "deleteModal": {
     "title": "删除仓库",
     "warning": "仓库将被完全删除，包括本地文件。是否继续？"
+  },
+  "removeFromListModal": {
+    "title": "从列表中移除",
+    "warning": "仓库将仅从列表中移除。本地文件不会被删除。是否继续？"
+  },
+  "resetModal": {
+    "title": "重置所有数据",
+    "warning": "所有应用数据将被重置。此操作无法撤销。是否继续？"
   },
   "versionModal": {
     "title": "更改版本",
@@ -47,7 +57,9 @@
     "rootPathDescription": "仓库将被克隆到的目录",
     "notSet": "未设置",
     "language": "语言",
-    "languageDescription": "选择显示语言"
+    "languageDescription": "选择显示语言",
+    "dangerZone": "危险区域",
+    "resetDataDescription": "重置所有应用数据，包括仓库列表和设置"
   },
   "errors": {
     "nameInvalid": "只能使用字母、数字、下划线和短横线",

@@ -455,3 +455,36 @@ pub async fn change_version(
 
     Err("Repository not found".to_string())
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn remove_from_list(
+    app: AppHandle,
+    state: State<'_, Mutex<AppState>>,
+    repo_id: u32,
+) -> Result<bool, String> {
+    {
+        let mut st = state.lock().unwrap();
+        let exists = st.local_repositories.iter().any(|r| r.id == repo_id);
+        if !exists {
+            return Err("Repository not found".to_string());
+        }
+        st.local_repositories.retain(|r| r.id != repo_id);
+    }
+    
+    save_state(app, state).ok();
+    Ok(true)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn reset_app_data(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<bool, String> {
+    {
+        let mut st = state.lock().unwrap();
+        st.path_root = "".to_string();
+        st.local_repositories = vec![];
+    }
+    
+    save_state(app, state).ok();
+    Ok(true)
+}

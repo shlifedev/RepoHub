@@ -22,6 +22,8 @@
   let deleteConfirmModal = $state(false)
   let deleteTarget = $state<number | null>(null)
   let isChangingVersion = $state(false)
+  let removeFromListModal = $state(false)
+  let removeFromListTarget = $state<number | null>(null)
 
   let unlistenProgress: (() => void) | null = null
   let unlistenComplete: (() => void) | null = null
@@ -98,6 +100,12 @@
     closeMenu()
   }
 
+  function openRemoveFromListConfirm(repoId: number) {
+    removeFromListTarget = repoId
+    removeFromListModal = true
+    closeMenu()
+  }
+
   async function handleOpenFolder(path: string) {
     closeMenu()
     await revealItemInDir(path)
@@ -106,6 +114,23 @@
   function closeDeleteConfirm() {
     deleteConfirmModal = false
     deleteTarget = null
+  }
+
+  function closeRemoveFromListConfirm() {
+    removeFromListModal = false
+    removeFromListTarget = null
+  }
+
+  async function handleRemoveFromList() {
+    if (removeFromListTarget === null) return
+
+    const result = await commands.removeFromList(removeFromListTarget)
+
+    if (result.status === "ok") {
+      repositories = repositories.filter(repo => repo.id !== removeFromListTarget)
+    }
+
+    closeRemoveFromListConfirm()
   }
 
   async function handleDelete() {
@@ -268,6 +293,9 @@
                 {$_("actions.openFolder")}
               </button>
               <div class="menu-divider"></div>
+              <button class="menu-item" onclick={() => openRemoveFromListConfirm(repo.id)}>
+                {$_("actions.removeFromList")}
+              </button>
               <button class="menu-item danger" onclick={() => openDeleteConfirm(repo.id)}>
                 {$_("actions.deleteRepository")}
               </button>
@@ -346,6 +374,20 @@
         <div class="modal-actions">
           <button class="btn-secondary" onclick={closeDeleteConfirm}>{$_("actions.cancel")}</button>
           <button class="btn-primary" onclick={handleDelete}>{$_("actions.delete")}</button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- 목록에서 제거 확인 모달 -->
+  {#if removeFromListModal}
+    <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeRemoveFromListConfirm} onkeydown={(e) => e.key === 'Escape' && closeRemoveFromListConfirm()}>
+      <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+        <h2>{$_("removeFromListModal.title")}</h2>
+        <p class="warning-message">{$_("removeFromListModal.warning")}</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick={closeRemoveFromListConfirm}>{$_("actions.cancel")}</button>
+          <button class="btn-primary" onclick={handleRemoveFromList}>{$_("actions.removeFromList")}</button>
         </div>
       </div>
     </div>

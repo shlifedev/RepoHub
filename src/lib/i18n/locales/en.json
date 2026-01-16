@@ -22,7 +22,9 @@
     "changing": "Changing...",
     "cloning": "Cloning...",
     "deleteRepository": "Delete Repository",
-    "openFolder": "Open Folder"
+    "openFolder": "Open Folder",
+    "removeFromList": "Remove from List",
+    "resetData": "Reset All Data"
   },
   "modal": {
     "addRepository": "Add Repository",
@@ -34,6 +36,14 @@
   "deleteModal": {
     "title": "Delete Repository",
     "warning": "The repository will be completely deleted including local files. Do you want to continue?"
+  },
+  "removeFromListModal": {
+    "title": "Remove from List",
+    "warning": "The repository will be removed from the list only. Local files will not be deleted. Do you want to continue?"
+  },
+  "resetModal": {
+    "title": "Reset All Data",
+    "warning": "All app data will be reset. This action cannot be undone. Do you want to continue?"
   },
   "versionModal": {
     "title": "Change Version",
@@ -47,7 +57,9 @@
     "rootPathDescription": "Directory where repositories will be cloned",
     "notSet": "Not set",
     "language": "Language",
-    "languageDescription": "Select display language"
+    "languageDescription": "Select display language",
+    "dangerZone": "Danger Zone",
+    "resetDataDescription": "Reset all app data including repository list and settings"
   },
   "errors": {
     "nameInvalid": "Only letters, numbers, underscores, and dashes allowed",

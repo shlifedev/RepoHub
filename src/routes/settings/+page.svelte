@@ -7,6 +7,7 @@
 
   let rootPath = $state("")
   let currentLocale = $state("en")
+  let showResetModal = $state(false)
 
   const supportedLocales = [
     { code: "en", name: "English" },
@@ -43,6 +44,21 @@
     currentLocale = newLocale
     locale.set(newLocale)
     localStorage.setItem("locale", newLocale)
+  }
+
+  function openResetModal() {
+    showResetModal = true
+  }
+
+  function closeResetModal() {
+    showResetModal = false
+  }
+
+  async function handleResetData() {
+    await commands.resetAppData()
+    rootPath = ""
+    closeResetModal()
+    window.location.reload()
   }
 </script>
 
@@ -95,8 +111,36 @@
           </select>
         </div>
       </section>
+
+      <section class="settings-section danger-section">
+        <h2>{$_("settings.dangerZone")}</h2>
+        <div class="setting-item">
+          <div class="setting-info">
+            <label>{$_("actions.resetData")}</label>
+            <p class="setting-description">
+              {$_("settings.resetDataDescription")}
+            </p>
+          </div>
+          <button class="btn-danger" onclick={openResetModal}>
+            {$_("actions.resetData")}
+          </button>
+        </div>
+      </section>
     </div>
   </div>
+
+  {#if showResetModal}
+    <div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeResetModal} onkeydown={(e) => e.key === 'Escape' && closeResetModal()}>
+      <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+        <h2>{$_("resetModal.title")}</h2>
+        <p class="warning-message">{$_("resetModal.warning")}</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick={closeResetModal}>{$_("actions.cancel")}</button>
+          <button class="btn-danger" onclick={handleResetData}>{$_("actions.resetData")}</button>
+        </div>
+      </div>
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -222,6 +266,87 @@
   .btn-browse:hover {
     background-color: #3d3d3d;
     border-color: #505050;
+  }
+
+  .danger-section h2 {
+    color: #ff5252;
+  }
+
+  .btn-danger {
+    padding: 8px 16px;
+    background-color: #d32f2f;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-danger:hover {
+    background-color: #b71c1c;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background-color: #252525;
+    border-radius: 12px;
+    padding: 30px;
+    width: 400px;
+    max-width: 90%;
+    border: 1px solid #404040;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-content h2 {
+    margin: 0 0 20px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #ff5252;
+  }
+
+  .warning-message {
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: #e0e0e0;
+    line-height: 1.5;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .btn-secondary {
+    padding: 8px 16px;
+    background-color: transparent;
+    color: #e0e0e0;
+    border: 1px solid #505050;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover {
+    background-color: #2d2d2d;
+    border-color: #606060;
   }
 
   @media (max-width: 700px) {

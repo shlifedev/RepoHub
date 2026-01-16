@@ -22,7 +22,9 @@
     "changing": "変更中...",
     "cloning": "クローン中...",
     "deleteRepository": "リポジトリを削除",
-    "openFolder": "フォルダを開く"
+    "openFolder": "フォルダを開く",
+    "removeFromList": "リストから削除",
+    "resetData": "すべてのデータをリセット"
   },
   "modal": {
     "addRepository": "リポジトリを追加",
@@ -34,6 +36,14 @@
   "deleteModal": {
     "title": "リポジトリを削除",
     "warning": "ローカルフォルダを含め、リポジトリが完全に削除されます。続行しますか？"
+  },
+  "removeFromListModal": {
+    "title": "リストから削除",
+    "warning": "リポジトリはリストからのみ削除されます。ローカルファイルは削除されません。続行しますか？"
+  },
+  "resetModal": {
+    "title": "すべてのデータをリセット",
+    "warning": "すべてのアプリデータがリセットされます。この操作は元に戻せません。続行しますか？"
   },
   "versionModal": {
     "title": "バージョン変更",
@@ -47,7 +57,9 @@
     "rootPathDescription": "リポジトリがクローンされるディレクトリ",
     "notSet": "未設定",
     "language": "言語",
-    "languageDescription": "表示言語を選択"
+    "languageDescription": "表示言語を選択",
+    "dangerZone": "危険ゾーン",
+    "resetDataDescription": "リポジトリリストと設定を含むすべてのアプリデータをリセット"
   },
   "errors": {
     "nameInvalid": "英数字、アンダースコア、ダッシュのみ使用できます",

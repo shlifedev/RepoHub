@@ -6,7 +6,7 @@ use tauri::{Manager, State};
 use tauri_specta::{collect_commands, collect_events};
 use modules::types::{AppInitializeEvent, CloneProgressEvent, CloneCompleteEvent};
 use crate::modules::types::RepositoryInfo;
-use crate::command::{get_root_path, set_root_path, add_project, clone_repository, validate_repo_name, get_repositories, get_filtered_tags, refresh_repository, change_version, delete_repository, save_state, load_state};
+use crate::command::{get_root_path, set_root_path, add_project, clone_repository, validate_repo_name, get_repositories, get_filtered_tags, refresh_repository, change_version, delete_repository, save_state, load_state, remove_from_list, reset_app_data};
 
 pub mod modules {
     pub mod git;
@@ -43,7 +43,9 @@ pub fn run() {
             change_version,
             delete_repository,
             save_state,
-            load_state
+            load_state,
+            remove_from_list,
+            reset_app_data
         ])
         .events(collect_events![AppInitializeEvent, CloneProgressEvent, CloneCompleteEvent]);
 
